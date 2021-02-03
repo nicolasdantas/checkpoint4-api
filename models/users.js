@@ -8,7 +8,7 @@ const findOne = async (id, failIfNotFound = true) => {
   const userId = id;
   const rows = await db.query("SELECT * FROM users WHERE user_id=?", [userId]);
   if (rows.length) {
-    delete rows[0].encrypted_password;
+    delete rows[0].user_encpwd;
     return rows[0];
   }
   if (failIfNotFound) throw new RecordNotFoundError("users", userId);
