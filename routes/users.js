@@ -7,6 +7,8 @@ const {
   handleOneUserCreation,
   handleOneUserDeletion,
   handleOneUserUpdate,
+  handleResetPassword,
+  handleStorePassword,
 } = require("../controllers/users");
 const handleImageUpload = require("../middlewares/handleImageUpload");
 
@@ -24,6 +26,16 @@ usersRouter.put(
   handleImageUpload,
   requireRequestBody,
   asyncHandler(handleOneUserUpdate)
+);
+usersRouter.post(
+  "/reset-password",
+  requireRequestBody,
+  asyncHandler(handleResetPassword)
+);
+usersRouter.post(
+  "/store-password",
+  requireRequestBody,
+  asyncHandler(handleStorePassword)
 );
 
 module.exports = usersRouter;
