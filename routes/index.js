@@ -1,6 +1,10 @@
-// const thingsRoutes = require('./things');
+const usersRouter = require("./users");
+const authRouter = require("./auth");
+const currentUserRoutes = require('./currentUser');
 
 // eslint-disable-next-line
 module.exports = (app) => {
-  // app.use('/things', thingsRoutes);
+  app.use("/users", usersRouter);
+  app.use("/auth", authRouter);
+  app.use('/me', currentUserRoutes);
 };

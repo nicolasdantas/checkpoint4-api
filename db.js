@@ -10,7 +10,7 @@ const {
 
 class Database {
   init() {
-    const connectionOptions = {
+    this.connectionOptions = {
       host: DB_HOST,
       port: DB_PORT,
       user: DB_USER,
@@ -19,8 +19,8 @@ class Database {
       multipleStatements: true,
       namedPlaceholders: true,
     };
-    this.connection = mysql.createConnection(connectionOptions);
-    this.pool = mysql.createPool(connectionOptions);
+    this.connection = mysql.createConnection(this.connectionOptions);
+    this.pool = mysql.createPool(this.connectionOptions);
     return this;
   }
 
@@ -49,7 +49,7 @@ class Database {
     if (!inTestEnv)
       throw new Error('Cannot truncate all table if not in test env !');
     const truncates = await this.getTableNames().then((tableNames) =>
-       tableNames.map((name) => `TRUNCATE \`${name}\`;`).join(' ')
+      tableNames.map((name) => `TRUNCATE \`${name}\`;`).join(' ')
     );
     const sql = `SET FOREIGN_KEY_CHECKS=0; ${truncates} SET FOREIGN_KEY_CHECKS=1;`;
     return this.query(sql);
