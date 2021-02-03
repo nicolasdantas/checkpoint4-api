@@ -22,7 +22,7 @@ const hashPassword = async (password) => argon2.hash(password);
 
 // verify password between plain password and encrypted password
 const verifyPassword = async (user, plainPassword) => {
-  return argon2.verify(user.encrypted_password, plainPassword);
+  return argon2.verify(user.user_encpwd, plainPassword);
 };
 
 // verify if email already exists in the database
@@ -146,7 +146,7 @@ const validate = async (attributes, options = { udpatedRessourceId: null }) => {
 
 // find an user by his email
 const findByEmail = async (email, failIfNotFound = true) => {
-  const rows = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+  const rows = await db.query("SELECT * FROM users WHERE user_email = ?", [email]);
   if (rows.length) {
     return rows[0];
   }
