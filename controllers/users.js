@@ -23,7 +23,7 @@ module.exports.handleAnUser = async (req, res) => {
 };
 
 module.exports.handleOneUserCreation = async (req, res) => {
-  const image = req.file ? req.file.path : null;
+  const file = req.file ? req.file.path : null;
   const {
     user_email,
     user_lastname,
@@ -37,7 +37,7 @@ module.exports.handleOneUserCreation = async (req, res) => {
     user_firstname,
     password,
     password_confirmation,
-    user_image: image,
+    user_image: file,
   });
   return res.status(201).json(createdUserId);
 };
@@ -48,9 +48,9 @@ module.exports.handleOneUserDeletion = async (req, res) => {
 };
 
 module.exports.handleOneUserUpdate = async (req, res) => {
-  let image;
+  let file;
   if (req.file) {
-    image = req.file.path;
+    file = req.file.path;
   }
   const {
     user_email,
@@ -65,7 +65,7 @@ module.exports.handleOneUserUpdate = async (req, res) => {
     user_firstname,
     password,
     password_confirmation,
-    user_image: image,
+    user_image: file,
   };
   const data = await updateUser(req.params.id, attributes);
   res.send(data);
