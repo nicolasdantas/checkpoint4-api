@@ -1,15 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const { inTestEnv, inProdEnv, SERVER_PORT } = require('./env');
+const express = require("express");
+const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+const { inTestEnv, inProdEnv, SERVER_PORT } = require("./env");
 
 const app = express();
 
 // docs
 if (!inProdEnv && !inTestEnv) {
-  const swaggerDocument = YAML.load('./docs/swagger.yaml');
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  const swaggerDocument = YAML.load("./docs/swagger.yaml");
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
 // pre-route middlewares
@@ -18,10 +18,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routes
-require('./routes')(app);
+require("./routes")(app);
 
 // post-route middlewares
-app.set('x-powered-by', false);
+app.set("x-powered-by", false);
 
 // server setup
 const server = app.listen(SERVER_PORT, () => {
@@ -31,18 +31,28 @@ const server = app.listen(SERVER_PORT, () => {
 });
 
 // process setup
-process.on('unhandledRejection', (error) => {
-  console.error('unhandledRejection', JSON.stringify(error), error.stack);
+process.on("unhandledRejection", (error) => {
+  console.error("unhandledRejection", JSON.stringify(error), error.stack);
   process.exit(1);
 });
-process.on('uncaughtException', (error) => {
-  console.error('uncaughtException', JSON.stringify(error), error.stack);
+process.on("uncaughtException", (error) => {
+  console.error("uncaughtException", JSON.stringify(error), error.stack);
   process.exit(1);
 });
-process.on('beforeExit', () => {
+process.on("beforeExit", () => {
   app.close((error) => {
     if (error) console.error(JSON.stringify(error), error.stack);
   });
 });
+
+// const handleServerInternalError = require("./middlewares/handleServerInternalError");
+const handleValidationError = require("./middlewares/handleValidationError");
+const handleRecordNotFoundError = require("./middlewares/handleRecordNotFoundError");
+// const handleUnauthorizedError = require("./middlewares/handleUnauthorizedError");
+
+app.use(handleRecordNotFoundError);
+app.use(handleValidationError);
+// app.use(handleUnauthorizedError);
+// app.use(handleServerInternalError);
 
 module.exports = server;
