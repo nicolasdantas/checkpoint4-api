@@ -14,8 +14,7 @@ const {
 } = require("./env");
 const handleValidationError = require("./middlewares/handleValidationError");
 const handleRecordNotFoundError = require("./middlewares/handleRecordNotFoundError");
-const handleUnauthorizedError = require('./middlewares/handleUnauthorizedError');
-
+const handleUnauthorizedError = require("./middlewares/handleUnauthorizedError");
 
 const app = express();
 app.set("x-powered-by", false);
