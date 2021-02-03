@@ -87,8 +87,8 @@ It will just execute the tests without settting up the DB and running the migrat
 ## Without Docker
 
 Install MySQL on your OS and create two databases on your MySQL instance :
-- p3_api_database
-- p3_api_database_test
+- checkpoint4_api_database
+- checkpoint4_api_database_test
 
 Then, change the `DB_*` variables in `.env` file to match your own MySQL DB settings
 
