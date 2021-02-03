@@ -24,11 +24,14 @@ module.exports.handleAFile = async (req, res) => {
 module.exports.handleFileCreation = async (req, res) => {
   const file = req.file ? req.file.path : null;
   const { userId } = req.session;
-  const { file_expire } = req.body;
+  const { file_expire, recipient } = req.body;
+  const { filename } = req.file;
   const createdUserId = await createFile({
     users_user_id: userId,
     file_expire,
     file_path: file,
+    recipient,
+    filename,
   });
   return res.status(201).json(createdUserId);
 };
