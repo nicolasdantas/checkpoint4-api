@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { RecordNotFoundError } = require("../error-types");
+const { RecordNotFoundError, UnauthorizedError } = require("../error-types");
 const definedAttributesToSqlSet = require("../helpers/definedAttributesToSQLSet.js");
 
 const findAllFiles = async () => {
@@ -32,11 +32,11 @@ const verifyIfOwnerOfFile = (userId, fileId) => {
 };
 
 const deleteFile = async (userId, fileId) => {
-  console.log(fileId);
-  if (verifyIfOwnerOfFile(userId, fileId)) {
+  const isOwnerOfFile = await verifyIfOwnerOfFile(userId, fileId);
+  if (isOwnerOfFile.length) {
     return db.query("DELETE FROM files WHERE file_id = ?", fileId);
   }
-  return null;
+  throw new UnauthorizedError();
 };
 
 module.exports = {

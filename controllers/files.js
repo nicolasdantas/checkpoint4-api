@@ -23,9 +23,10 @@ module.exports.handleAFile = async (req, res) => {
 
 module.exports.handleFileCreation = async (req, res) => {
   const image = req.file ? req.file.path : null;
-  const { user_id, file_expire } = req.body;
+  const { userId } = req.session;
+  const { file_expire } = req.body;
   const createdUserId = await createFile({
-    users_user_id: user_id,
+    users_user_id: userId,
     file_expire,
     file_path: image,
   });
