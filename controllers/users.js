@@ -4,6 +4,8 @@ const {
   createUser,
   deleteUser,
   updateUser,
+  resetPassword,
+  storePassword,
 } = require("../models/users.js");
 
 module.exports.handleAllUsers = async (req, res) => {
@@ -69,4 +71,14 @@ module.exports.handleOneUserUpdate = async (req, res) => {
   };
   const data = await updateUser(req.params.id, attributes);
   res.send(data);
+};
+
+module.exports.handleResetPassword = async (req, res) => {
+  await resetPassword(req.body.email);
+  return res.sendStatus(200);
+};
+
+module.exports.handleStorePassword = async (req, res) => {
+  await storePassword(req.body);
+  return res.sendStatus(200);
 };

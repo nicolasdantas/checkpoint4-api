@@ -17,6 +17,7 @@ const SESSION_COOKIE_SECRET = getEnv(`SESSION_COOKIE_SECRET`);
 const CORS_ALLOWED_ORIGINS = getEnv(`CORS_ALLOWED_ORIGINS`);
 const SENDINBLUE_API_KEY = getEnv(`SENDINBLUE_API_KEY`);
 const SERVER_URL = getEnv(`SERVER_URL`);
+const CLIENT_URL = getEnv(`CLIENT_URL`);
 
 const SERVER_PORT = getEnv(`SERVER_PORT${inTestEnv ? "_TEST" : ""}`);
 
@@ -42,4 +43,5 @@ module.exports = {
   SESSION_COOKIE_NAME,
   SENDINBLUE_API_KEY,
   SERVER_URL,
+  CLIENT_URL,
 };

@@ -1,8 +1,12 @@
 const argon2 = require("argon2");
 const Joi = require("joi");
+const crypto = require("crypto");
+const moment = require("moment");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 const definedAttributesToSqlSet = require("../helpers/definedAttributesToSQLSet.js");
 const { ValidationError, RecordNotFoundError } = require("../error-types");
 const db = require("../db.js");
+const { SENDINBLUE_API_KEY, CLIENT_URL } = require("../env");
 
 const findOne = async (id, failIfNotFound = true) => {
   const userId = id;
@@ -146,7 +150,9 @@ const validate = async (attributes, options = { udpatedRessourceId: null }) => {
 
 // find an user by his email
 const findByEmail = async (email, failIfNotFound = true) => {
-  const rows = await db.query("SELECT * FROM users WHERE user_email = ?", [email]);
+  const rows = await db.query("SELECT * FROM users WHERE user_email = ?", [
+    email,
+  ]);
   if (rows.length) {
     return rows[0];
   }
@@ -198,6 +204,155 @@ const updateUser = async (id, newAttributes) => {
     .then(() => findOne(id));
 };
 
+const sendLinkToResetPassword = (datas) => {
+  console.log(datas);
+  const { email, token, userId, user_firstname } = datas;
+  const defaultClient = SibApiV3Sdk.ApiClient.instance;
+  const apiKey = defaultClient.authentications["api-key"];
+  apiKey.apiKey = SENDINBLUE_API_KEY;
+
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+  sendSmtpEmail.subject = "DaddyTrasfer- Mise à jour de votre mot de passe";
+  sendSmtpEmail.htmlContent = `<html><body><h2>Bonjour ${user_firstname}, veuillez cliquer sur le lien ci-dessous pour réinitialiser votre mot de passe</h2>
+  <a href=${CLIENT_URL}reset/${userId}/${token}>Cliquez ici</a><p>Attention, ce lien est valable 15 minutes.</p><p>A bientôt</p><p>L'équipe DaddyTransfer</p></body></html>`;
+  sendSmtpEmail.sender = {
+    name: `DaddyTransfer`,
+    email: "no-reply@no-reply.com",
+  };
+  sendSmtpEmail.to = [{ email }];
+  sendSmtpEmail.replyTo = {
+    name: `DaddyTransfer`,
+    email: "no-reply@no-reply.com",
+  };
+
+  try {
+    apiInstance.sendTransacEmail(sendSmtpEmail);
+    return;
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// find one user by his id in forgot_password table
+const findOneInForgotPassword = async (id) => {
+  const userId = id;
+  const rows = await db.query(
+    "SELECT * FROM forgot_pwd WHERE users_user_id=?",
+    [userId]
+  );
+  if (rows.length) {
+    return rows[0];
+  }
+  return false;
+};
+
+const resetPassword = async (email) => {
+  const user = await findByEmail(email);
+  const { user_firstname, user_lastname } = user;
+  const userId = user.user_id;
+  const token = crypto.randomBytes(32).toString("hex");
+  const hashedToken = await argon2.hash(token);
+  const hasAlreadyReset = await findOneInForgotPassword(userId);
+  const expire = moment().add(900, "seconds").format();
+  if (hasAlreadyReset) {
+    await db.query("DELETE FROM `forgot_pwd` WHERE users_user_id = ?", [
+      userId,
+    ]);
+    await db.query(
+      "INSERT INTO `forgot_pwd` (users_user_id, forgot_pwd_token, forgot_pwd_expire) VALUES (?, ?, ?)",
+      [userId, hashedToken, expire]
+    );
+  } else {
+    await db.query(
+      "INSERT INTO `forgot_pwd` (users_user_id, forgot_pwd_token, forgot_pwd_expire) VALUES (?, ?, ?)",
+      [userId, hashedToken, expire]
+    );
+  }
+  await sendLinkToResetPassword({
+    email,
+    token,
+    userId,
+    user_firstname,
+    user_lastname,
+  });
+};
+
+const validatePasswords = async (attributes) => {
+  const schema = Joi.object().keys({
+    newPassword: Joi.string().min(8).max(25).required().messages({
+      "string.min": "Le mot de passe doit comprendre au moins 8 caractères",
+      "string.max": "Le mot de passe doit comprendre moins de 25 caractères",
+    }),
+    newPasswordConfirmation: Joi.when("password", {
+      is: Joi.string().min(8).max(30).required(),
+      then: Joi.any()
+        .equal(Joi.ref("password"))
+        .required()
+        .messages({ "any.only": "Les mots de passe ne correspondent pas" }),
+    }),
+  });
+
+  const { error } = schema.validate(attributes, {
+    abortEarly: false,
+  });
+  if (error)
+    throw new ValidationError([
+      {
+        message: error.details.map((err) => err.message),
+        path: ["joi"],
+        type: "unique",
+      },
+    ]);
+};
+
+const storePassword = async (datas) => {
+  const { userId, newPassword, newPasswordConfirmation, token } = datas;
+  await validatePasswords({ newPassword, newPasswordConfirmation });
+  const isUserIdExist = await findOneInForgotPassword(userId);
+  if (!isUserIdExist) {
+    throw new RecordNotFoundError(
+      "Erreur, veuillez refaire une demande de mot de passe",
+      userId
+    );
+  } else {
+    const verifyTokens = await argon2.verify(
+      isUserIdExist.forgot_pwd_token,
+      token
+    );
+    const linkHasAlreadyBeUsed = await db.query(
+      "SELECT * from forgot_pwd WHERE users_user_id = ? AND forgot_pwd_hasbeused = 0",
+      [userId]
+    );
+    const isTokenHasExpired = () => {
+      const { forgot_pwd_expire } = linkHasAlreadyBeUsed[0];
+      if (forgot_pwd_expire < moment().format()) {
+        throw new RecordNotFoundError(
+          "La validité du lien est dépassée, veuillez faire une autre demande",
+          userId
+        );
+      }
+      return false;
+    };
+    if (verifyTokens && linkHasAlreadyBeUsed.length && !isTokenHasExpired()) {
+      const newHashedPassword = await argon2.hash(newPassword);
+      await db.query(
+        "UPDATE forgot_pwd SET forgot_pwd_hasbeused = 1 WHERE users_user_id = ?",
+        [userId]
+      );
+      return db.query("UPDATE users SET user_encpwd = ? WHERE user_id = ?", [
+        newHashedPassword,
+        userId,
+      ]);
+    }
+    throw new RecordNotFoundError(
+      "Erreur, veuillez refaire une demande de mot de passe",
+      userId
+    );
+  }
+};
+
 module.exports = {
   createUser,
   verifyPassword,
@@ -206,4 +361,6 @@ module.exports = {
   findOne,
   deleteUser,
   updateUser,
+  resetPassword,
+  storePassword,
 };
