@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   version: '1.0.0'
-  title: 'P3 API'
+  title: 'checkpint 4 API'
   description: 'Simple API to manage things'
 host: 'localhost:5000'
 basePath: '/'
