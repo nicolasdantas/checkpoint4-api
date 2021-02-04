@@ -7,11 +7,13 @@ const {
   handleAFile,
   handleFileCreation,
   handleFileDeletion,
+  handleAllFilesByUser,
 } = require("../controllers/files");
 const handleImageUpload = require("../middlewares/handleImageUpload");
 
 filesRouter.get("/", asyncHandler(handleAllFiles));
 filesRouter.get("/:id", asyncHandler(handleAFile));
+filesRouter.get("/users/:id", asyncHandler(handleAllFilesByUser));
 filesRouter.delete(
   "/:id",
   requireCurrentUser,

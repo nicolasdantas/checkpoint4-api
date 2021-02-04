@@ -46,9 +46,16 @@ const findAllFiles = async () => {
   );
 };
 
+const findAllFilesByUser = async (userId) => {
+  return db.query(
+    "SELECT * FROM files AS f JOIN users as u ON f.users_user_id = u.user_id WHERE users_user_id = ?",
+    [userId]
+  );
+};
+
 const findAFile = async (id, failIfNotFound = true) => {
   const rows = await db.query(
-    "SELECT * FROM files AS f JOIN users as u ON f.users_user_id = u.user_id",
+    "SELECT f.file_id, f.file_path, u.user_id, u.user_email, u.user_firstname, u.user_lastname, u.user_image FROM files AS f JOIN users as u ON f.users_user_id = u.user_id WHERE f.file_id = ?",
     [id]
   );
   if (rows.length) {
@@ -59,6 +66,7 @@ const findAFile = async (id, failIfNotFound = true) => {
 };
 
 const createFile = async (formData) => {
+  console.log(formData);
   const { recipient, filename, ...datas } = formData;
   const result = await db
     .query(
@@ -84,15 +92,17 @@ const verifyIfOwnerOfFile = (userId, fileId) => {
 };
 
 const deleteFile = async (userId, fileId) => {
+  console.log(fileId);
   const isOwnerOfFile = await verifyIfOwnerOfFile(userId, fileId);
   if (isOwnerOfFile.length) {
-    return db.query("DELETE FROM files WHERE file_id = ?", fileId);
+    return db.query("DELETE FROM files WHERE file_id = ?", [fileId]);
   }
   throw new UnauthorizedError();
 };
 
 module.exports = {
   findAllFiles,
+  findAllFilesByUser,
   findAFile,
   createFile,
   deleteFile,
