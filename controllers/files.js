@@ -34,7 +34,6 @@ module.exports.handleAFile = async (req, res) => {
 };
 
 module.exports.handleFileCreation = async (req, res) => {
-  console.log(req.session);
   const file = req.file ? req.file.path : null;
   const { userId } = req.session;
   const { file_expire, recipient } = req.body;

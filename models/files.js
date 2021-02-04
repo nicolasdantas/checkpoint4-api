@@ -1,4 +1,5 @@
 const SibApiV3Sdk = require("sib-api-v3-sdk");
+const fs = require("fs");
 const db = require("../db.js");
 const { RecordNotFoundError, UnauthorizedError } = require("../error-types");
 const definedAttributesToSqlSet = require("../helpers/definedAttributesToSQLSet.js");
@@ -21,7 +22,10 @@ const sendMail = (datas) => {
   } = datas;
   sendSmtpEmail.templateId = 2;
   sendSmtpEmail.subject = "Vous avez reçu un nouveau fichier";
-  sendSmtpEmail.sender = { name: "DaddyTransfer", email: recipient };
+  sendSmtpEmail.sender = {
+    name: `${sender_firstname} ${sender_lastname}`,
+    email: sender_email,
+  };
   sendSmtpEmail.to = [{ email: recipient }];
 
   sendSmtpEmail.params = {
@@ -66,7 +70,6 @@ const findAFile = async (id, failIfNotFound = true) => {
 };
 
 const createFile = async (formData) => {
-  console.log(formData);
   const { recipient, filename, ...datas } = formData;
   const result = await db
     .query(
@@ -92,9 +95,13 @@ const verifyIfOwnerOfFile = (userId, fileId) => {
 };
 
 const deleteFile = async (userId, fileId) => {
-  console.log(fileId);
   const isOwnerOfFile = await verifyIfOwnerOfFile(userId, fileId);
   if (isOwnerOfFile.length) {
+    fs.unlink(isOwnerOfFile[0].file_path, (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
     return db.query("DELETE FROM files WHERE file_id = ?", [fileId]);
   }
   throw new UnauthorizedError();
