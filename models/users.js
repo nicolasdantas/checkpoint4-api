@@ -205,7 +205,6 @@ const updateUser = async (id, newAttributes) => {
 };
 
 const sendLinkToResetPassword = (datas) => {
-  console.log(datas);
   const { email, token, userId, user_firstname } = datas;
   const defaultClient = SibApiV3Sdk.ApiClient.instance;
   const apiKey = defaultClient.authentications["api-key"];
